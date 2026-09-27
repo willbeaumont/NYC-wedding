@@ -6,6 +6,21 @@
   <meta name="description" content="A New York City arrival and wedding-day guide for October 7 and 9, 2026.">
   <meta name="theme-color" content="#17352d">
   <title>A New York Wedding | October 7-9, 2026</title>
+  <script>
+    (() => {
+      const storageKey = 'nyc-wedding-theme';
+      let savedTheme = null;
+      try {
+        savedTheme = localStorage.getItem(storageKey);
+      } catch {
+        // Storage may be unavailable in private or restricted browsing contexts.
+      }
+      const systemTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const theme = savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : systemTheme;
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css">
   <script src="script.js" defer></script>
 </head>
@@ -15,10 +30,17 @@
   <header class="site-header" id="top">
     <nav class="nav shell" aria-label="Primary navigation">
       <a class="wordmark" href="#top" aria-label="New York wedding, home">NYC <span aria-hidden="true">✦</span> 2026</a>
-      <div class="nav-links">
-        <a href="#weekend">The plan</a>
-        <a href="#travel">Getting around</a>
-        <a href="#notes">Good to know</a>
+      <div class="nav-actions">
+        <div class="nav-links">
+          <a href="#weekend">The plan</a>
+          <a href="#weather">Weather</a>
+          <a href="#travel">Getting around</a>
+          <a href="#notes">Good to know</a>
+        </div>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">
+          <span class="theme-toggle-icon" aria-hidden="true">◐</span>
+          <span id="theme-toggle-label">Dark mode</span>
+        </button>
       </div>
     </nav>
   </header>
@@ -49,6 +71,56 @@
         <h2 id="welcome-title">Two dates.<br>One easy plan.</h2>
       </div>
       <p class="intro-copy">Guests arrive Wednesday, with Thursday open to settle in and explore. The ceremony and celebration lunch take place Friday. Save this page for addresses, route ideas, and day-of reminders.</p>
+    </section>
+
+    <section class="weather section-pad" id="weather" aria-labelledby="weather-title">
+      <div class="shell">
+        <div class="section-heading weather-heading">
+          <div>
+            <p class="eyebrow">New York forecast</p>
+            <h2 id="weather-title">Weather for the week</h2>
+          </div>
+          <p>Daily conditions for New York City from Wednesday, October 7 through Friday, October 9, 2026.</p>
+        </div>
+
+        <p class="weather-status" id="weather-status" role="status" aria-live="polite" aria-atomic="true">It is too early for a reliable daily forecast. Check again closer to October 7, 2026.</p>
+        <div class="weather-grid" aria-label="Wedding week weather">
+          <article class="weather-card" data-weather-date="2026-10-07">
+            <p class="card-kicker">Arrival day</p>
+            <h3>Wednesday, October 7</h3>
+            <p class="weather-condition" data-weather-condition>Forecast details will appear here when available.</p>
+            <dl class="weather-details">
+              <div><dt>High</dt><dd data-weather-high>Not available yet</dd></div>
+              <div><dt>Low</dt><dd data-weather-low>Not available yet</dd></div>
+              <div><dt>Rain</dt><dd data-weather-rain>Not available yet</dd></div>
+            </dl>
+          </article>
+          <article class="weather-card" data-weather-date="2026-10-08">
+            <p class="card-kicker">Open day</p>
+            <h3>Thursday, October 8</h3>
+            <p class="weather-condition" data-weather-condition>Forecast details will appear here when available.</p>
+            <dl class="weather-details">
+              <div><dt>High</dt><dd data-weather-high>Not available yet</dd></div>
+              <div><dt>Low</dt><dd data-weather-low>Not available yet</dd></div>
+              <div><dt>Rain</dt><dd data-weather-rain>Not available yet</dd></div>
+            </dl>
+          </article>
+          <article class="weather-card" data-weather-date="2026-10-09">
+            <p class="card-kicker">Wedding day</p>
+            <h3>Friday, October 9</h3>
+            <p class="weather-condition" data-weather-condition>Forecast details will appear here when available.</p>
+            <dl class="weather-details">
+              <div><dt>High</dt><dd data-weather-high>Not available yet</dd></div>
+              <div><dt>Low</dt><dd data-weather-low>Not available yet</dd></div>
+              <div><dt>Rain</dt><dd data-weather-rain>Not available yet</dd></div>
+            </dl>
+          </article>
+        </div>
+        <div class="weather-links">
+          <p>Live daily data is provided by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo <span aria-hidden="true">↗</span></a> when the dates enter its 16-day forecast window.</p>
+          <a class="button button-weather" href="https://forecast.weather.gov/MapClick.php?lat=40.7128&amp;lon=-74.0060" target="_blank" rel="noopener noreferrer">Check the New York forecast <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
     </section>
 
     <section class="schedule section-pad" id="weekend" aria-labelledby="schedule-title">
