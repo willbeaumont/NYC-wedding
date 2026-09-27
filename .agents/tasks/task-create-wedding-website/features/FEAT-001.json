@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Create a complete, polished, responsive single-page New York wedding itinerary that orients arriving guests and gives actionable travel guidance among the Upper West Side near the American Museum of Natural History, the Manhattan Marriage Bureau, and the post-ceremony lunch at Keens Steakhouse.",
+  "status": "completed",
+  "steps": [
+    "Create package.json with dependency-free npm scripts for local serving, build validation, and Node built-in tests; add a focused static server or validation script only if needed by those scripts.",
+    "Build semantic index.html sections for a welcoming hero, Wednesday October 7, 2026 arrival plan, Friday October 9, 2026 ceremony and post-ceremony lunch, venue cards, route guidance, practical reminders, and a compact footer. State the Friday ceremony time as 11:00 AM and identify the Manhattan Marriage Bureau at 141 Worth Street near City Hall and Keens Steakhouse at 72 West 36th Street.",
+    "In the travel section, provide clear route options from the Upper West Side around West 79th Street and the American Museum of Natural History to the Marriage Bureau, and from the Marriage Bureau to Keens. Include subway, walking or taxi estimates as appropriate, accessible addresses, map links, and a reminder to verify live MTA service. Do not overstate unconfirmed lunch timing, lodging, RSVP, or private couple details.",
+    "Create styles.css with an editorial New York wedding aesthetic, custom CSS artwork or texture instead of external image dependencies, responsive layouts, strong typography hierarchy using system fonts, visible focus states, sufficient contrast, touch-friendly controls, reduced-motion support, and polished mobile and desktop presentation.",
+    "Create script.js for restrained progressive enhancements such as an accurate event countdown, current-day itinerary emphasis, copy-address feedback, or route disclosure controls. Ensure core details and links remain available with JavaScript disabled.",
+    "Add tests/site.test.js using node:test to validate critical dates, time, venue names and addresses, required page landmarks, safe external links, and script syntax or content contracts so tests exercise the delivered website rather than asserting unrelated constants.",
+    "Write README.md with design summary, factual assumptions, project structure, exact npm run build/npm test/npm run dev commands, and content-update guidance. Add a sensible .gitignore, initialize a local Git repository on a conventional branch, and leave all project and task-state files visible for review without pushing."
+  ],
+  "acceptance_criteria": [
+    "The page clearly distinguishes Wednesday, October 7, 2026 arrivals from the Friday, October 9, 2026 wedding day.",
+    "Friday shows an 11:00 AM ceremony at the Manhattan Marriage Bureau, 141 Worth Street, New York, NY 10013, followed by a celebration lunch at Keens Steakhouse, 72 West 36th Street, New York, NY 10018.",
+    "Guests can find practical transit guidance for West 79th Street or the museum area to the ceremony and from the ceremony to Keens, with working map/transit destinations and a live-service disclaimer.",
+    "The experience is polished at narrow phone and wide desktop widths, keyboard accessible, usable without JavaScript, and free of third-party runtime assets.",
+    "Running npm run build and npm test succeeds with no dependency installation."
+  ],
+  "verification": [
+    "npm run build",
+    "npm test",
+    "npm run dev, then load the printed localhost URL and inspect the page at mobile and desktop widths"
+  ],
+  "blocked_reason": null,
+  "findings": "Implemented the dependency-free responsive site, semantic itinerary, verified route guidance, progressive enhancements, local server, validation, and 12 Node tests. Review remediation replaced obsolete MetroCard acquisition advice with OMNY contactless guidance, raised light-section eyebrow contrast to at least 5.36:1, established 44px minimum targets for navigation and destination links, and replaced the low-contrast gold focus outline with a two-color white and deep-green focus indicator that maintains at least 3:1 contrast across light and dark surfaces. Focused tests verify fare-payment copy, affected touch-target selectors, WCAG AA label contrast, and focus-indicator contrast against every site surface. npm run build and npm test pass when the sandbox's invalid NODE_OPTIONS preload is removed; the default environment points to missing /opt/amazon/kiro-agent/proxy-bootstrap.js before npm can start. Headless inspection confirmed the computed 3px white outline and 8px deep-green outer ring on a venue map link, with no desktop horizontal overflow; an earlier 390px check confirmed all affected visible links render at 44px tall with no horizontal overflow. The authoritative follow-up now identifies the Keens event as a post-ceremony celebration lunch while retaining the explicit note that its exact time is unconfirmed; the build, all 12 tests, and local-server content inspection pass with NODE_OPTIONS unset."
+}
