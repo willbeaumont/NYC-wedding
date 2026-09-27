@@ -4,18 +4,23 @@ const WEDDING_DATE = new Date('2026-10-09T11:00:00-04:00');
 const EVENT_DATES = ['2026-10-07', '2026-10-08', '2026-10-09'];
 const WEATHER_TIME_ZONE = 'America/New_York';
 const WEATHER_FORECAST_DAYS = 16;
+const WEATHER_REFRESH_MS = 30 * 60 * 1000;
 const THEME_STORAGE_KEY = 'nyc-wedding-theme';
-const OPEN_METEO_URL = new URL('https://api.open-meteo.com/v1/forecast');
+const OPEN_METEO_ENDPOINT = 'https://api.open-meteo.com/v1/forecast';
 
-OPEN_METEO_URL.search = new URLSearchParams({
-  latitude: '40.7128',
-  longitude: '-74.0060',
-  daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
-  temperature_unit: 'fahrenheit',
-  timezone: WEATHER_TIME_ZONE,
-  start_date: EVENT_DATES[0],
-  end_date: EVENT_DATES.at(-1)
-}).toString();
+function weatherRequestUrl(dates) {
+  const url = new URL(OPEN_METEO_ENDPOINT);
+  url.search = new URLSearchParams({
+    latitude: '40.7128',
+    longitude: '-74.0060',
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+    temperature_unit: 'fahrenheit',
+    timezone: WEATHER_TIME_ZONE,
+    start_date: dates[0],
+    end_date: dates.at(-1)
+  }).toString();
+  return url.toString();
+}
 
 function dateInNewYork(now = new Date()) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -37,9 +42,13 @@ function addUtcDays(dateString, days) {
 function forecastAvailability(now = new Date()) {
   const today = dateInNewYork(now);
   if (today > EVENT_DATES.at(-1)) return 'past';
-  if (today > EVENT_DATES[0]) return 'underway';
   if (EVENT_DATES.at(-1) > addUtcDays(today, WEATHER_FORECAST_DAYS - 1)) return 'early';
   return 'available';
+}
+
+function eventDatesRemaining(now = new Date()) {
+  const today = dateInNewYork(now);
+  return EVENT_DATES.filter((date) => date >= today);
 }
 
 function weatherDescription(code) {
@@ -61,7 +70,7 @@ function setWeatherStatus(message, state) {
   status.dataset.state = state;
 }
 
-function validDailyForecast(daily) {
+function validDailyForecast(daily, dates = EVENT_DATES) {
   const keys = [
     'time',
     'weather_code',
@@ -71,7 +80,7 @@ function validDailyForecast(daily) {
   ];
   if (!daily || !keys.every((key) => Array.isArray(daily[key]))) return false;
   if (!keys.every((key) => daily[key].length === daily.time.length)) return false;
-  return EVENT_DATES.every((date) => {
+  return dates.every((date) => {
     const index = daily.time.indexOf(date);
     return index >= 0 && [
       daily.weather_code[index],
@@ -82,10 +91,22 @@ function validDailyForecast(daily) {
   });
 }
 
-function renderForecast(daily) {
-  if (!validDailyForecast(daily)) throw new Error('Malformed forecast payload');
+function liveUpdateTime(now) {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: WEATHER_TIME_ZONE,
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  }).format(now);
+}
 
-  EVENT_DATES.forEach((date) => {
+function renderForecast(daily, { dates = EVENT_DATES, now = new Date() } = {}) {
+  if (!validDailyForecast(daily, dates)) throw new Error('Malformed forecast payload');
+
+  dates.forEach((date) => {
     const card = document.querySelector(`[data-weather-date="${date}"]`);
     if (!card) return;
     const index = daily.time.indexOf(date);
@@ -93,48 +114,87 @@ function renderForecast(daily) {
     card.querySelector('[data-weather-high]').textContent = `${Math.round(daily.temperature_2m_max[index])}°F`;
     card.querySelector('[data-weather-low]').textContent = `${Math.round(daily.temperature_2m_min[index])}°F`;
     card.querySelector('[data-weather-rain]').textContent = `${Math.round(daily.precipitation_probability_max[index])}% chance`;
-    card.dataset.forecast = 'available';
+    const source = card.querySelector('[data-weather-source]');
+    if (source) source.textContent = 'Live forecast';
+    card.dataset.forecast = 'live';
   });
-  setWeatherStatus('The latest New York forecast is available below. Conditions can change, so check again before heading out.', 'success');
+
+  const remainingNote = dates.length < EVENT_DATES.length
+    ? ' Past event-date cards remain labeled as typical estimates.'
+    : '';
+  setWeatherStatus(`Live Open-Meteo forecast updated ${liveUpdateTime(now)}.${remainingNote} Conditions can change, so check again before heading out.`, 'success');
+  const updated = document.querySelector('#weather-updated');
+  if (updated) {
+    updated.textContent = `Last successful live update: ${liveUpdateTime(now)}.`;
+    updated.hidden = false;
+  }
 }
 
-async function loadWeatherForecast({ now = new Date(), fetchImpl = globalThis.fetch, timeout = 8000 } = {}) {
+async function requestWeatherForecast({ now = new Date(), fetchImpl = globalThis.fetch, timeout = 8000 } = {}) {
   const availability = forecastAvailability(now);
   if (availability === 'early') {
-    setWeatherStatus('Typical early October conditions are shown below. Check again once October 9 is within the 16-day forecast window.', 'early');
+    setWeatherStatus('Typical early October estimates are shown below. Check again once October 9 is within the 16-day forecast window for live data.', 'early');
     return 'early';
   }
   if (availability === 'past') {
-    setWeatherStatus('These event dates have passed. The forecast link below still shows current New York weather.', 'past');
+    setWeatherStatus('These event dates have passed. The cards show typical planning estimates unless they were updated live while this page was open. The forecast link below shows current New York weather.', 'past');
     return 'past';
   }
-  if (availability === 'underway') {
-    setWeatherStatus('The event week is underway. Use the direct forecast link below for current New York conditions.', 'past');
-    return 'underway';
-  }
   if (typeof fetchImpl !== 'function') {
-    setWeatherStatus('Live forecast data is unavailable right now. Typical early October estimates remain below, and the direct New York forecast link is available.', 'error');
+    setWeatherStatus('Live forecast data is unavailable right now. Cards labeled Typical estimate are planning guidance; any cards labeled Live forecast show the last successful update.', 'error');
     return 'error';
   }
 
-  setWeatherStatus('Checking the latest New York forecast…', 'loading');
+  const dates = eventDatesRemaining(now);
+  setWeatherStatus('Checking Open-Meteo for the latest live New York forecast…', 'loading');
   const controller = new AbortController();
   const timeoutId = globalThis.setTimeout(() => controller.abort(), timeout);
   try {
-    const response = await fetchImpl(OPEN_METEO_URL.toString(), {
+    const response = await fetchImpl(weatherRequestUrl(dates), {
       headers: { Accept: 'application/json' },
       signal: controller.signal
     });
     if (!response.ok) throw new Error(`Forecast request failed with ${response.status}`);
     const payload = await response.json();
-    renderForecast(payload.daily);
+    renderForecast(payload.daily, { dates, now });
     return 'success';
   } catch {
-    setWeatherStatus('Live forecast data is unavailable right now. Typical early October estimates remain below. Use the direct New York forecast link and check again later.', 'error');
+    setWeatherStatus('The live forecast could not be loaded or refreshed. Cards labeled Typical estimate are planning guidance; cards labeled Live forecast retain their last successful values and update time. Use the direct New York forecast link and check again later.', 'error');
     return 'error';
   } finally {
     globalThis.clearTimeout(timeoutId);
   }
+}
+
+let activeWeatherRequest = null;
+function loadWeatherForecast(options = {}) {
+  const now = options.now || new Date();
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  if (forecastAvailability(now) !== 'available' || typeof fetchImpl !== 'function') {
+    return requestWeatherForecast({ ...options, now, fetchImpl });
+  }
+  if (activeWeatherRequest) return activeWeatherRequest;
+  activeWeatherRequest = requestWeatherForecast({ ...options, now, fetchImpl }).finally(() => {
+    activeWeatherRequest = null;
+  });
+  return activeWeatherRequest;
+}
+
+function startWeatherUpdates({
+  nowProvider = () => new Date(),
+  fetchImpl = globalThis.fetch,
+  refreshInterval = WEATHER_REFRESH_MS,
+  setIntervalImpl = globalThis.setInterval
+} = {}) {
+  const load = () => loadWeatherForecast({ now: nowProvider(), fetchImpl });
+  const initialLoad = load();
+  let intervalId = null;
+
+  if (forecastAvailability(nowProvider()) === 'available' && typeof setIntervalImpl === 'function') {
+    intervalId = setIntervalImpl(load, refreshInterval);
+  }
+
+  return { initialLoad, intervalId };
 }
 
 function readStoredTheme() {
@@ -249,7 +309,7 @@ document.querySelectorAll('[data-copy]').forEach((button) => {
 initializeTheme();
 updateCountdown();
 markCurrentItineraryDay();
-loadWeatherForecast();
+startWeatherUpdates();
 
 globalThis.WeddingApp = {
   applyTheme,
@@ -257,5 +317,6 @@ globalThis.WeddingApp = {
   initializeTheme,
   loadWeatherForecast,
   renderForecast,
+  startWeatherUpdates,
   weatherDescription
 };

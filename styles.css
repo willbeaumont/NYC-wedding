@@ -219,9 +219,11 @@
   .weather-status[data-state="loading"] { border-left-color: var(--blue); }
   .weather-status[data-state="success"] { border-left-color: #4f806e; }
   .weather-status[data-state="error"] { border-left-color: var(--rose); }
+  .weather-updated { margin: -1rem 0 2rem; color: var(--text-muted); font-size: 0.82rem; font-weight: 750; }
   .weather-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
   .weather-card { min-width: 0; padding: clamp(1.4rem, 3vw, 2rem); border: 1px solid var(--line); background: var(--surface-card); box-shadow: var(--shadow); }
-  .weather-card h3 { margin: 0.65rem 0 1rem; font-family: Georgia, serif; font-weight: 400; }
+  .weather-card h3 { margin: 0.65rem 0 0.75rem; font-family: Georgia, serif; font-weight: 400; }
+  .weather-source { display: inline-flex; margin: 0 0 0.8rem; padding: 0.25rem 0.5rem; border: 1px solid currentColor; border-radius: 999px; color: var(--accent-text); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; line-height: 1.2; text-transform: uppercase; }
   .weather-condition { min-height: 3.3rem; color: var(--text-muted); }
   .weather-details { display: grid; grid-template-columns: repeat(3, 1fr); margin: 1.4rem 0 0; border-top: 1px solid var(--line); }
   .weather-details div { min-width: 0; padding: 1rem 0.55rem 0; border-left: 1px solid var(--line); }

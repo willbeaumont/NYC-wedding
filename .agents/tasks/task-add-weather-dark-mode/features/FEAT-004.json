@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-004",
+  "type": "fix",
+  "description": "Make live wedding weather updates reliable throughout the event window and clearly distinguish live forecasts from typical estimates.",
+  "status": "completed",
+  "steps": [
+    "Reproduce and diagnose forecast behavior throughout the October 7 through October 9 event window.",
+    "Continue requesting available event-date weather through October 9 and refresh live data periodically while the page remains open.",
+    "Clearly label typical estimates versus live forecast values and show when live data was updated.",
+    "Add regression coverage and verify production validation, automated tests, and browser behavior."
+  ],
+  "acceptance_criteria": [
+    "The widget attempts to load available event-date forecast data on October 7, October 8, and October 9 rather than stopping after the event begins.",
+    "An open page periodically refreshes live forecast data without overlapping requests.",
+    "Users can unambiguously tell whether cards show typical estimates or live forecast data, including the live data update time.",
+    "Build, tests, and relevant desktop and phone browser checks pass.",
+    "The fix is committed locally on an appropriately named follow-up branch with a clean worktree."
+  ],
+  "verification": [
+    "env -u NODE_OPTIONS npm run build",
+    "env -u NODE_OPTIONS npm test",
+    "Inspect live and fallback weather states in a real browser at phone and desktop widths"
+  ],
+  "blocked_reason": null,
+  "findings": "Root cause: forecastAvailability returned underway after October 7, so loadWeatherForecast stopped calling Open-Meteo on October 8 and 9. The fixed flow treats every date through October 9 as available, requests only event dates that have not passed, refreshes every 30 minutes while within the window, and reuses an in-flight request. Each card now visibly says Typical estimate or Live forecast, successful responses show a New York update timestamp, and that timestamp and live values survive refresh failures. Direct curl and browser requests reached the environment proxy but were denied with HTTP 403 by Squid, so controlled browser data verified the success path while the real blocked request verified honest fallback behavior. env -u NODE_OPTIONS npm run build passed; env -u NODE_OPTIONS npm test passed all 21 tests. Headless browser checks at 390px and 1280px confirmed one-column and three-column weather layouts without horizontal overflow, October 8 partial live rendering, persistent update time after a failed refresh, and clearly labeled fallback estimates."
+}
