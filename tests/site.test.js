@@ -68,6 +68,7 @@ function executeApp({ storedTheme = null, systemDark = false, storageThrows = fa
   const root = makeNode();
   const status = makeNode();
   const toggle = makeNode();
+  const icon = makeNode();
   const label = makeNode();
   const themeColor = makeNode();
   const countdownNode = makeNode();
@@ -104,6 +105,7 @@ function executeApp({ storedTheme = null, systemDark = false, storageThrows = fa
     querySelector(selector) {
       if (selector === '#weather-status') return status;
       if (selector === '#theme-toggle') return toggle;
+      if (selector === '.theme-toggle-icon') return icon;
       if (selector === '#theme-toggle-label') return label;
       if (selector === 'meta[name="theme-color"]') return themeColor;
       if (selector === '#countdown') return countdownNode;
@@ -135,6 +137,7 @@ function executeApp({ storedTheme = null, systemDark = false, storageThrows = fa
     app: context.WeddingApp,
     cards,
     context,
+    icon,
     label,
     mediaListeners,
     root,
@@ -228,7 +231,11 @@ test('provides a semantic weather fallback and secure direct forecast links', ()
   assert.match(html, /id="weather"[^>]*aria-labelledby="weather-title"/);
   assert.match(html, /id="weather-status" role="status" aria-live="polite" aria-atomic="true"/);
   assert.equal((html.match(/data-weather-date="2026-10-0[789]"/g) || []).length, 3);
-  assert.match(html, /too early for a reliable daily forecast/i);
+  assert.match(html, /Typical early October conditions are shown until a live daily forecast/i);
+  assert.equal((html.match(/About 68°F/g) || []).length, 3);
+  assert.equal((html.match(/About 54°F/g) || []).length, 3);
+  assert.equal((html.match(/About 30% chance/g) || []).length, 3);
+  assert.doesNotMatch(html, /Not available yet|Forecast details will appear here/i);
   assert.match(html, /forecast\.weather\.gov\/MapClick\.php\?lat=40\.7128&amp;lon=-74\.0060/);
   assert.match(html, /open-meteo\.com/);
 });
@@ -330,6 +337,7 @@ test('uses persisted theme choice or system preference and survives blocked stor
   const persisted = executeApp({ storedTheme: 'dark', systemDark: false });
   assert.equal(persisted.root.dataset.theme, 'dark');
   assert.equal(themeToggleAnnouncement(persisted), 'Dark mode, pressed');
+  assert.equal(persisted.icon.textContent, '☾');
   assert.equal(persisted.toggle.getAttribute('aria-label'), undefined);
   assert.equal(persisted.themeColor.getAttribute('content'), '#0d1c18');
 
@@ -339,6 +347,7 @@ test('uses persisted theme choice or system preference and survives blocked stor
   system.mediaListeners[0]({ matches: false });
   assert.equal(system.root.dataset.theme, 'light');
   assert.equal(themeToggleAnnouncement(system), 'Dark mode, not pressed');
+  assert.equal(system.icon.textContent, '☀');
   system.toggle.dispatch('click');
   assert.equal(system.getSavedTheme(), 'dark');
   assert.equal(themeToggleAnnouncement(system), 'Dark mode, pressed');
@@ -369,8 +378,13 @@ test('provides keyboard, mobile-first, and reduced-motion styling', () => {
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
   const mobileBaseline = css.indexOf('.day-grid, .venue-grid, .notes-grid, .weather-grid { grid-template-columns: 1fr; }');
+  const stackedTimeline = css.indexOf('.timeline li { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; }');
   const wideEnhancement = css.indexOf('@media (min-width: 821px)');
+  const tabletEnhancement = css.indexOf('@media (min-width: 561px)');
   assert.ok(mobileBaseline >= 0 && mobileBaseline < wideEnhancement, 'Single-column mobile layouts should be the default before wider enhancements');
+  assert.ok(stackedTimeline >= 0 && stackedTimeline < tabletEnhancement, 'Timeline labels should stack before the 561px enhancement');
+  assert.match(css.slice(tabletEnhancement), /\.timeline li \{ grid-template-columns: 100px 1fr; \}/);
+  assert.equal(propertyValue(declarationsFor('body'), 'min-width'), '0');
 
   for (const selector of ['.wordmark', '.nav-links a', '.text-link', '.button', '.theme-toggle', '.site-footer a']) {
     const minHeight = parseFloat(propertyValue(declarationsFor(selector), 'min-height'));
@@ -407,9 +421,13 @@ test('keeps dark body, hero, header, and small tip labels at readable contrast',
   const heroForeground = propertyValue(root, heroForegroundToken);
   assert.equal(propertyValue(declarationsFor('.site-header'), 'color'), `var(${heroForegroundToken})`);
   assert.equal(propertyValue(declarationsFor('.hero'), 'color'), `var(${heroForegroundToken})`);
-  const heroBackgrounds = propertyValue(declarationsFor('.hero::before'), 'background')
-    .match(/#[0-9a-f]{6}/gi);
-  assert.ok(heroBackgrounds.length >= 2, 'Expected both hero gradient endpoint colors');
+  const heroBackgrounds = [
+    propertyValue(root, '--hero-gradient-start'),
+    propertyValue(root, '--hero-gradient-end'),
+    propertyValue(dark, '--hero-gradient-start'),
+    propertyValue(dark, '--hero-gradient-end')
+  ];
+  assert.match(propertyValue(declarationsFor('.hero::before'), 'background'), /var\(--hero-gradient-start\)[\s\S]*var\(--hero-gradient-end\)/);
   for (const background of heroBackgrounds) {
     const ratio = contrastRatio(heroForeground, background);
     assert.ok(ratio >= 4.5, `Hero foreground on ${background} has only ${ratio.toFixed(2)}:1 contrast`);

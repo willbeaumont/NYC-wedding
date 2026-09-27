@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Fix dark-mode appearance and narrow-screen timeline overlap regressions reported after review.",
+  "status": "completed",
+  "steps": [
+    "Reproduce the dark-mode and narrow-screen layout regressions in a real browser and diagnose their root causes.",
+    "Correct dark-mode surface styling so switching theme is visually clear throughout the page.",
+    "Make the wedding timeline resilient at narrow viewport widths so Afterward and Celebration lunch never overlap.",
+    "Provide clearly labeled typical early-October planning estimates until live daily forecast data is available, while retaining honest fallback messaging.",
+    "Add regression coverage to validation and tests, then verify build, tests, and desktop and narrow browser layouts."
+  ],
+  "acceptance_criteria": [
+    "Using the theme control visibly switches all page sections between coherent light and dark appearances.",
+    "At narrow phone widths, Afterward and Celebration lunch remain separate, readable, and non-overlapping.",
+    "Before a live forecast is available, the weather cards show clearly labeled typical early-October planning estimates rather than empty placeholders.",
+    "Production validation and all automated tests pass, and browser checks pass at narrow and desktop widths.",
+    "The focused fix is committed locally on an appropriately named fix branch with a clean worktree."
+  ],
+  "verification": [
+    "env -u NODE_OPTIONS npm run build",
+    "env -u NODE_OPTIONS npm test",
+    "Inspect light and dark themes at narrow and desktop widths in a real browser"
+  ],
+  "blocked_reason": null,
+  "findings": "Real-browser diagnosis showed that theme selection and dark palette variables worked, but the visible hero retained the same hardcoded gradient and the toggle icon and styling did not reflect state, making the control appear ineffective at the top of the page. The 320px timeline kept Afterward in an 82px column even though the rendered label needed 96px, crowding the adjacent Celebration lunch content; a fixed 320px body minimum and oversized mobile hero heading also contributed to narrow-page overflow. Added theme-aware hero tokens, selected-toggle styling, synchronized sun and moon icons, a narrower mobile heading, zero body minimum width, and a stacked narrow timeline restored to two columns from 561px. Per live user steering, static weather cards now show clearly labeled typical early-October estimates of about 68°F high, 54°F low, and 30% precipitation chance until live data replaces them, including honest service-failure messaging and documentation. Production validation and all 19 Node tests pass. Browser checks at 320px and 1280px confirmed no horizontal overflow, no timeline overlap, one and three weather columns respectively, distinct light and dark hero and control states, and visible typical estimates when the live service is unavailable. No Dockerfile exists."
+}

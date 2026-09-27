@@ -2,13 +2,13 @@
   "task_id": "task-add-weather-dark-mode",
   "task_description": "Add an available-when-supported New York wedding forecast widget and persistent accessible dark mode to the existing wedding itinerary site.",
   "status": "completed",
-  "feature_order": ["FEAT-001", "FEAT-002"],
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
   "blocked_reason": null,
   "verification": {
     "build": "pass",
     "tests": "pass",
     "test_quality": "pass",
     "docker_build": "skipped",
-    "summary": "Semantic review remediation iteration 2 passed production validation and all 19 Node tests. The theme toggle now has the stable accessible name Dark mode with aria-pressed reporting its state, and regression coverage checks the combined announcement in both modes. The responsive cascade now uses mobile-first single-column defaults with min-width enhancements at 561px and 821px. Browser inspection passed at 320px and 1280px with no overflow, 44px theme controls, one and three forecast columns respectively, and appropriate navigation density. No Dockerfile exists."
+    "summary": "Regression follow-up passed production validation and all 19 Node tests. Browser checks at 320px and 1280px confirmed no horizontal overflow or timeline overlap, clear light and dark theme feedback, responsive one and three-column weather layouts, and typical early-October estimates when live weather is unavailable. No Dockerfile exists."
   }
 }
