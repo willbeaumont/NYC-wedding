@@ -12,6 +12,7 @@ async function validate() {
     [html.includes('<main id="main-content">'), 'index.html must include the main landmark'],
     [html.includes('Manhattan Marriage Bureau'), 'index.html must include the ceremony venue'],
     [html.includes('Keens Steakhouse') && html.includes('Celebration lunch'), 'index.html must include the lunch venue'],
+    [html.includes('datetime="2026-10-09T20:00:00-04:00"') && html.includes('8:00 PM') && html.includes('Cocktail party') && html.includes("newlyweds' apartment") && html.includes('shared privately'), 'index.html must include the privacy-safe Friday cocktail party'],
     [html.includes('styles.css') && html.includes('script.js'), 'index.html must load local CSS and JavaScript'],
     [html.includes('id="weather"') && html.includes('id="weather-status" role="status"') && html.includes('id="weather-updated" hidden'), 'index.html must include accessible weather status and persistent live-update time'],
     [(html.match(/data-weather-date="2026-10-0[789]"/g) || []).length === 3, 'index.html must include all three event weather dates'],

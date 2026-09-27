@@ -28,7 +28,8 @@ The light and dark palettes cover page surfaces, cards, controls, illustrations,
 - The wedding day is Friday, October 9, 2026.
 - The civil ceremony is at 11:00 AM at the Manhattan Marriage Bureau, 141 Worth Street, New York, NY 10013, near City Hall.
 - A celebration lunch at Keens Steakhouse, 72 West 36th Street, New York, NY 10018, follows the ceremony.
-- No exact lunch time, lodging plan, RSVP process, dress code, or private couple details have been assumed.
+- A cocktail party begins at 8:00 PM on Friday at the newlyweds' apartment. Its address and arrival details remain private and will be shared separately.
+- No exact lunch time, lodging plan, RSVP process, dress code, or other private couple details have been assumed.
 - Transit routes and durations are practical estimates, not guarantees. Guests are directed to verify live MTA service on the travel day.
 
 ## Run locally

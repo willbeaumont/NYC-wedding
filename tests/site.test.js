@@ -205,6 +205,16 @@ test('includes the confirmed post-ceremony lunch without inventing its time', ()
   assert.match(html, /exact lunch timing has not been confirmed|final timing will be shared/i);
 });
 
+test('includes the confirmed Friday cocktail party without exposing private logistics', () => {
+  const cocktailEvent = html.match(/<li>\s*<time datetime="2026-10-09T20:00:00-04:00">8:00 PM<\/time>[\s\S]*?<\/li>/)?.[0];
+
+  assert.ok(cocktailEvent, 'Expected the 8:00 PM Friday event');
+  assert.match(cocktailEvent, /Cocktail party/);
+  assert.match(cocktailEvent, /newlyweds' apartment/i);
+  assert.doesNotMatch(cocktailEvent, /\d+\s+(?:East|West|E\.|W\.)?\s*[A-Z][a-z]+\s+(?:Street|Avenue|Road)|access code|apartment number/i);
+  assert.match(html, /Apartment address and arrival details will be shared privately/i);
+});
+
 test('provides both required routes and live-service advice', () => {
   assert.match(html, /West 79th Street \/ Museum area/);
   assert.match(html, /81 St-Museum of Natural History/);
