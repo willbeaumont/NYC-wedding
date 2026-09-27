@@ -4,9 +4,21 @@ A dependency-free, responsive single-page guide for guests arriving in New York 
 
 ## Design
 
-The page pairs an editorial wedding aesthetic with New York visual cues. A deep green, parchment, brass, and muted rose palette supports custom CSS skyline and venue illustrations, so there are no remote images, fonts, scripts, or runtime dependencies. Semantic landmarks, clear heading structure, visible keyboard focus, touch-friendly controls, print styles, and reduced-motion behavior keep the guide practical as well as polished.
+The page pairs an editorial wedding aesthetic with New York visual cues. A deep green, parchment, brass, and muted rose palette supports custom CSS skyline and venue illustrations, so there are no remote images, fonts, scripts, or runtime package dependencies. The responsive CSS starts with narrow-screen, single-column defaults and progressively enhances the layout at `561px` and `821px`. Semantic landmarks, clear heading structure, visible keyboard focus, touch-friendly controls, print styles, and reduced-motion behavior keep the guide practical as well as polished.
 
-JavaScript is progressive enhancement only. It adds an event countdown, marks the current itinerary date, and enables copy-address feedback. All event details, travel instructions, addresses, and map links remain available without JavaScript.
+JavaScript is progressive enhancement only. It adds an event countdown, marks the current itinerary date, enables copy-address feedback, requests an event-week forecast when available, and manages the theme control. All event details, travel instructions, addresses, static weather guidance, and direct map and forecast links remain available without JavaScript.
+
+## Weather forecast
+
+The weather section covers New York City for October 7 through October 9, 2026. When all three dates are inside the provider's supported 16-day window, the browser requests only daily weather code, high and low temperature, and maximum precipitation probability from the no-key [Open-Meteo forecast API](https://open-meteo.com/). The fixed request coordinates are `40.7128,-74.0060`, the time zone is `America/New_York`, and temperatures are displayed in Fahrenheit.
+
+The site does not call the provider before the complete event range can fit in its forecast horizon. It also avoids presenting forecast data as current after the dates have started or passed. Before the window opens, after the event, or when a request is offline, blocked by CORS, times out, receives an HTTP error, or returns malformed data, the widget keeps honest fallback copy and a direct [National Weather Service New York forecast](https://forecast.weather.gov/MapClick.php?lat=40.7128&lon=-74.0060). Itinerary content never depends on either weather service.
+
+No weather data, location permission, user-entered information, cookies, analytics, or account details are collected by this project. During the forecast window, the visitor's browser makes a direct HTTPS request to Open-Meteo for the fixed New York coordinates, so normal request metadata such as the visitor's IP address is visible to that provider under its own privacy practices.
+
+## Dark mode
+
+The light and dark palettes cover page surfaces, cards, controls, illustrations, status messages, focus indicators, print output, and responsive layouts. Before the stylesheet loads, a small local script applies a valid saved `light` or `dark` selection to prevent an obvious theme flash. If there is no saved selection, the page follows `prefers-color-scheme` and continues responding to operating-system theme changes. The accessible toggle keeps the stable name “Dark mode” while its pressed state announces whether that option is active. Using it creates an explicit selection in `localStorage`; storage access is guarded so restricted or private browsing contexts remain fully usable even when persistence is unavailable.
 
 ## Confirmed details and assumptions
 
@@ -31,13 +43,13 @@ npm run dev
 
 ## Project structure
 
-- `index.html`: Semantic page content and safe external links
-- `styles.css`: Responsive visual system, CSS artwork, accessibility, and print treatment
-- `script.js`: Optional countdown, date emphasis, and address-copy enhancement
-- `scripts/validate.js`: Dependency-free production validation
+- `index.html`: Semantic page content, static fallbacks, early theme selection, and safe external links
+- `styles.css`: Responsive light and dark visual systems, CSS artwork, accessibility, reduced motion, and print treatment
+- `script.js`: Optional forecast, theme, countdown, date emphasis, and address-copy enhancements
+- `scripts/validate.js`: Dependency-free production validation for core content, weather, and theme contracts
 - `scripts/serve.js`: Small local static server
-- `tests/site.test.js`: Node built-in tests for critical content and page contracts
+- `tests/site.test.js`: Node built-in tests with controlled DOM, fetch, media-query, and storage doubles
 
 ## Updating content
 
-Edit confirmed wording and itinerary details in `index.html`. If the wedding date or time changes, also update `WEDDING_DATE` in `script.js` and the matching assertions in `tests/site.test.js`. Keep full street addresses in map URLs, preserve `target="_blank" rel="noopener noreferrer"` on external links, and avoid adding unconfirmed timing or guest details.
+Edit confirmed wording and itinerary details in `index.html`. If the wedding date or time changes, also update `WEDDING_DATE` and `EVENT_DATES` in `script.js` and the matching assertions in `tests/site.test.js`. Keep full street addresses in map URLs, preserve `target="_blank" rel="noopener noreferrer"` on external links, and avoid adding unconfirmed timing or guest details.

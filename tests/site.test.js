@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { readFile } = require('node:fs/promises');
-const { Script } = require('node:vm');
+const { Script, createContext } = require('node:vm');
 
 let html;
 let css;
@@ -35,6 +35,119 @@ function relativeLuminance(color) {
 function contrastRatio(colorA, colorB) {
   const luminances = [relativeLuminance(colorA), relativeLuminance(colorB)].sort((a, b) => b - a);
   return (luminances[0] + 0.05) / (luminances[1] + 0.05);
+}
+
+function makeNode() {
+  const listeners = {};
+  const classes = new Set();
+  return {
+    textContent: '',
+    dataset: {},
+    style: {},
+    attributes: {},
+    classList: {
+      add(...names) { names.forEach((name) => classes.add(name)); },
+      remove(...names) { names.forEach((name) => classes.delete(name)); },
+      toggle(name, force) {
+        const shouldAdd = force === undefined ? !classes.has(name) : force;
+        if (shouldAdd) classes.add(name);
+        else classes.delete(name);
+        return shouldAdd;
+      },
+      contains(name) { return classes.has(name); }
+    },
+    addEventListener(type, listener) { listeners[type] = listener; },
+    dispatch(type) { listeners[type]?.(); },
+    setAttribute(name, value) { this.attributes[name] = String(value); },
+    removeAttribute(name) { delete this.attributes[name]; },
+    getAttribute(name) { return this.attributes[name]; }
+  };
+}
+
+function executeApp({ storedTheme = null, systemDark = false, storageThrows = false } = {}) {
+  const root = makeNode();
+  const status = makeNode();
+  const toggle = makeNode();
+  const label = makeNode();
+  const themeColor = makeNode();
+  const countdownNode = makeNode();
+  const cards = Object.fromEntries(['2026-10-07', '2026-10-08', '2026-10-09'].map((date) => {
+    const fields = {
+      '[data-weather-condition]': makeNode(),
+      '[data-weather-high]': makeNode(),
+      '[data-weather-low]': makeNode(),
+      '[data-weather-rain]': makeNode()
+    };
+    const card = makeNode();
+    card.querySelector = (selector) => fields[selector];
+    card.fields = fields;
+    return [date, card];
+  }));
+  const mediaListeners = [];
+  const mediaQuery = {
+    matches: systemDark,
+    addEventListener(type, listener) { if (type === 'change') mediaListeners.push(listener); }
+  };
+  let savedTheme = storedTheme;
+  const storage = {
+    getItem() {
+      if (storageThrows) throw new Error('Storage disabled');
+      return savedTheme;
+    },
+    setItem(key, value) {
+      if (storageThrows) throw new Error('Storage disabled');
+      savedTheme = value;
+    }
+  };
+  const documentDouble = {
+    documentElement: root,
+    querySelector(selector) {
+      if (selector === '#weather-status') return status;
+      if (selector === '#theme-toggle') return toggle;
+      if (selector === '#theme-toggle-label') return label;
+      if (selector === 'meta[name="theme-color"]') return themeColor;
+      if (selector === '#countdown') return countdownNode;
+      const weatherCard = selector.match(/^\[data-weather-date="([^"]+)"\]$/);
+      return weatherCard ? cards[weatherCard[1]] : null;
+    },
+    querySelectorAll() { return []; }
+  };
+  const context = {
+    AbortController,
+    Date,
+    Intl,
+    URL,
+    URLSearchParams,
+    console,
+    document: documentDouble,
+    fetch: undefined,
+    localStorage: storage,
+    matchMedia: () => mediaQuery,
+    navigator: { clipboard: { writeText: async () => {} } },
+    setTimeout,
+    clearTimeout
+  };
+  context.window = context;
+  context.globalThis = context;
+  const vmContext = createContext(context);
+  new Script(javascript, { filename: 'script.js' }).runInContext(vmContext);
+  return {
+    app: context.WeddingApp,
+    cards,
+    context,
+    label,
+    mediaListeners,
+    root,
+    status,
+    themeColor,
+    toggle,
+    getSavedTheme: () => savedTheme
+  };
+}
+
+function themeToggleAnnouncement(runtime) {
+  const state = runtime.toggle.getAttribute('aria-pressed') === 'true' ? 'pressed' : 'not pressed';
+  return `${runtime.label.textContent}, ${state}`;
 }
 
 test.before(async () => {
@@ -111,12 +224,155 @@ test('has no third-party runtime assets', () => {
   assert.match(html, /src="script\.js"/);
 });
 
-test('provides keyboard, mobile, and reduced-motion styling', () => {
+test('provides a semantic weather fallback and secure direct forecast links', () => {
+  assert.match(html, /id="weather"[^>]*aria-labelledby="weather-title"/);
+  assert.match(html, /id="weather-status" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.equal((html.match(/data-weather-date="2026-10-0[789]"/g) || []).length, 3);
+  assert.match(html, /too early for a reliable daily forecast/i);
+  assert.match(html, /forecast\.weather\.gov\/MapClick\.php\?lat=40\.7128&amp;lon=-74\.0060/);
+  assert.match(html, /open-meteo\.com/);
+});
+
+test('renders controlled available forecast data without network access', async () => {
+  const runtime = executeApp();
+  const daily = {
+    time: ['2026-10-07', '2026-10-08', '2026-10-09'],
+    weather_code: [0, 3, 61],
+    temperature_2m_max: [68.4, 63.2, 59.7],
+    temperature_2m_min: [52.2, 50.1, 48.6],
+    precipitation_probability_max: [5, 20, 70]
+  };
+  let requestedUrl;
+  const result = await runtime.app.loadWeatherForecast({
+    now: new Date('2026-09-25T16:00:00Z'),
+    fetchImpl: async (url) => {
+      requestedUrl = url;
+      return { ok: true, json: async () => ({ daily }) };
+    }
+  });
+
+  assert.equal(result, 'success');
+  assert.match(requestedUrl, /latitude=40\.7128/);
+  assert.match(requestedUrl, /longitude=-74\.0060/);
+  assert.match(requestedUrl, /timezone=America%2FNew_York/);
+  assert.match(requestedUrl, /daily=weather_code%2Ctemperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_probability_max/);
+  assert.equal(runtime.cards['2026-10-07'].fields['[data-weather-condition]'].textContent, 'Clear sky');
+  assert.equal(runtime.cards['2026-10-07'].fields['[data-weather-high]'].textContent, '68°F');
+  assert.equal(runtime.cards['2026-10-09'].fields['[data-weather-low]'].textContent, '49°F');
+  assert.equal(runtime.cards['2026-10-09'].fields['[data-weather-rain]'].textContent, '70% chance');
+  assert.equal(runtime.status.dataset.state, 'success');
+});
+
+test('honors the inclusive forecast boundary, avoids early fetches, and handles service failures', async () => {
+  const runtime = executeApp();
+  let calls = 0;
+
+  assert.equal(
+    runtime.app.forecastAvailability(new Date('2026-09-24T16:00:00Z')),
+    'available',
+    'October 9 should be available on the first day of the inclusive 16-day window'
+  );
+  assert.equal(runtime.app.forecastAvailability(new Date('2026-09-23T16:00:00Z')), 'early');
+
+  const tooEarly = await runtime.app.loadWeatherForecast({
+    now: new Date('2026-09-01T16:00:00Z'),
+    fetchImpl: async () => { calls += 1; }
+  });
+  assert.equal(tooEarly, 'early');
+  assert.equal(calls, 0);
+  assert.match(runtime.status.textContent, /16-day forecast window/i);
+
+  const failed = await runtime.app.loadWeatherForecast({
+    now: new Date('2026-09-25T16:00:00Z'),
+    fetchImpl: async () => { throw new Error('offline'); }
+  });
+  assert.equal(failed, 'error');
+  assert.equal(runtime.status.dataset.state, 'error');
+  assert.match(runtime.status.textContent, /direct New York forecast link/i);
+});
+
+test('falls back safely for malformed, HTTP, and timed-out forecast requests', async () => {
+  const runtime = executeApp();
+  const availableNow = new Date('2026-09-25T16:00:00Z');
+
+  const malformed = await runtime.app.loadWeatherForecast({
+    now: availableNow,
+    fetchImpl: async () => ({ ok: true, json: async () => ({ daily: { time: [] } }) })
+  });
+  assert.equal(malformed, 'error');
+  assert.equal(runtime.status.dataset.state, 'error');
+
+  const httpFailure = await runtime.app.loadWeatherForecast({
+    now: availableNow,
+    fetchImpl: async () => ({ ok: false, status: 503 })
+  });
+  assert.equal(httpFailure, 'error');
+  assert.equal(runtime.status.dataset.state, 'error');
+
+  let requestSignal;
+  const timedOut = await runtime.app.loadWeatherForecast({
+    now: availableNow,
+    timeout: 1,
+    fetchImpl: async (url, { signal }) => {
+      requestSignal = signal;
+      await new Promise((resolve, reject) => {
+        signal.addEventListener('abort', () => reject(new Error('Request aborted')));
+      });
+    }
+  });
+  assert.equal(timedOut, 'error');
+  assert.equal(requestSignal.aborted, true);
+  assert.equal(runtime.status.dataset.state, 'error');
+  assert.match(runtime.status.textContent, /direct New York forecast link/i);
+});
+
+test('uses persisted theme choice or system preference and survives blocked storage', () => {
+  const persisted = executeApp({ storedTheme: 'dark', systemDark: false });
+  assert.equal(persisted.root.dataset.theme, 'dark');
+  assert.equal(themeToggleAnnouncement(persisted), 'Dark mode, pressed');
+  assert.equal(persisted.toggle.getAttribute('aria-label'), undefined);
+  assert.equal(persisted.themeColor.getAttribute('content'), '#0d1c18');
+
+  const system = executeApp({ systemDark: true });
+  assert.equal(system.root.dataset.theme, 'dark');
+  assert.equal(themeToggleAnnouncement(system), 'Dark mode, pressed');
+  system.mediaListeners[0]({ matches: false });
+  assert.equal(system.root.dataset.theme, 'light');
+  assert.equal(themeToggleAnnouncement(system), 'Dark mode, not pressed');
+  system.toggle.dispatch('click');
+  assert.equal(system.getSavedTheme(), 'dark');
+  assert.equal(themeToggleAnnouncement(system), 'Dark mode, pressed');
+  system.mediaListeners[0]({ matches: false });
+  assert.equal(system.root.dataset.theme, 'dark', 'Explicit selection should ignore later system changes');
+
+  assert.doesNotThrow(() => executeApp({ storageThrows: true, systemDark: true }));
+  const blocked = executeApp({ storageThrows: true, systemDark: false });
+  blocked.toggle.dispatch('click');
+  assert.equal(blocked.root.dataset.theme, 'dark');
+  assert.equal(themeToggleAnnouncement(blocked), 'Dark mode, pressed');
+  assert.equal(blocked.root.classList.contains('theme-ready'), true);
+});
+
+test('hides the theme control until its JavaScript behavior is initialized', () => {
+  assert.equal(propertyValue(declarationsFor('.theme-toggle'), 'display'), 'none');
+  assert.equal(propertyValue(declarationsFor('.js.theme-ready .theme-toggle'), 'display'), 'inline-flex');
+
+  const initialized = executeApp();
+  assert.equal(initialized.root.classList.contains('js'), true);
+  assert.equal(initialized.root.classList.contains('theme-ready'), true);
+});
+
+test('provides keyboard, mobile-first, and reduced-motion styling', () => {
   assert.match(css, /:focus-visible/);
-  assert.match(css, /@media \(max-width: 560px\)/);
+  assert.match(css, /@media \(min-width: 561px\)/);
+  assert.match(css, /@media \(min-width: 821px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
-  for (const selector of ['.wordmark', '.nav-links a', '.text-link', '.button', '.site-footer a']) {
+  const mobileBaseline = css.indexOf('.day-grid, .venue-grid, .notes-grid, .weather-grid { grid-template-columns: 1fr; }');
+  const wideEnhancement = css.indexOf('@media (min-width: 821px)');
+  assert.ok(mobileBaseline >= 0 && mobileBaseline < wideEnhancement, 'Single-column mobile layouts should be the default before wider enhancements');
+
+  for (const selector of ['.wordmark', '.nav-links a', '.text-link', '.button', '.theme-toggle', '.site-footer a']) {
     const minHeight = parseFloat(propertyValue(declarationsFor(selector), 'min-height'));
     assert.ok(minHeight >= 44, `${selector} should have a touch target at least 44px tall`);
   }
@@ -134,6 +390,44 @@ test('keeps small eyebrow labels at WCAG AA contrast on light sections', () => {
     const ratio = contrastRatio(eyebrowColor, background);
     assert.ok(ratio >= 4.5, `${eyebrowColor} on ${background} has only ${ratio.toFixed(2)}:1 contrast`);
   }
+});
+
+test('keeps dark body, hero, header, and small tip labels at readable contrast', () => {
+  const root = declarationsFor(':root');
+  const dark = declarationsFor(':root[data-theme="dark"]');
+  const darkInk = propertyValue(dark, '--ink');
+  const darkPaper = propertyValue(dark, '--paper');
+  const darkMuted = propertyValue(dark, '--text-muted');
+  const darkCard = propertyValue(dark, '--surface-card');
+
+  assert.ok(contrastRatio(darkInk, darkPaper) >= 7, 'Dark theme body text should have enhanced contrast');
+  assert.ok(contrastRatio(darkMuted, darkCard) >= 4.5, 'Dark theme muted card text should meet WCAG AA');
+
+  const heroForegroundToken = '--hero-foreground';
+  const heroForeground = propertyValue(root, heroForegroundToken);
+  assert.equal(propertyValue(declarationsFor('.site-header'), 'color'), `var(${heroForegroundToken})`);
+  assert.equal(propertyValue(declarationsFor('.hero'), 'color'), `var(${heroForegroundToken})`);
+  const heroBackgrounds = propertyValue(declarationsFor('.hero::before'), 'background')
+    .match(/#[0-9a-f]{6}/gi);
+  assert.ok(heroBackgrounds.length >= 2, 'Expected both hero gradient endpoint colors');
+  for (const background of heroBackgrounds) {
+    const ratio = contrastRatio(heroForeground, background);
+    assert.ok(ratio >= 4.5, `Hero foreground on ${background} has only ${ratio.toFixed(2)}:1 contrast`);
+  }
+
+  const darkAccent = propertyValue(dark, '--accent-text');
+  const darkNotes = propertyValue(dark, '--paper-light');
+  assert.equal(propertyValue(declarationsFor('.tips-grid article > span'), 'color'), 'var(--accent-text)');
+  assert.ok(
+    contrastRatio(darkAccent, darkNotes) >= 4.5,
+    `Dark tip labels on notes have only ${contrastRatio(darkAccent, darkNotes).toFixed(2)}:1 contrast`
+  );
+
+  assert.match(css, /:root\[data-theme="dark"\] \.venue-card/);
+  assert.match(css, /:root\[data-theme="dark"\] \.toast/);
+  assert.match(css, /:root:not\(\[data-theme="light"\]\) \.venue-card/);
+  assert.match(css, /:root:not\(\[data-theme="light"\]\)[\s\S]*--accent-text:\s*#e0bc78/);
+  assert.match(css, /@media print/);
 });
 
 test('keeps a high-contrast two-color focus indicator on every surface', () => {

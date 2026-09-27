@@ -1,0 +1,28 @@
+{
+  "project_type": "Dependency-free responsive static wedding itinerary website",
+  "language": "HTML, CSS, and vanilla JavaScript on Node.js 18+ tooling",
+  "build_system": "npm scripts backed only by built-in Node.js APIs; there are no package dependencies and no Dockerfile. The sandbox has a stale NODE_OPTIONS preload, so every Node/npm command must be prefixed with env -u NODE_OPTIONS.",
+  "test_framework": "Node.js built-in test runner in tests/site.test.js. Existing tests read index.html, styles.css, and script.js, inspect HTML/CSS contracts, calculate color contrast, and parse JavaScript with node:vm.",
+  "build_command": "env -u NODE_OPTIONS npm run build",
+  "test_command": "env -u NODE_OPTIONS npm test",
+  "verification_instructions": "Run env -u NODE_OPTIONS npm run build, then env -u NODE_OPTIONS npm test. Run env -u NODE_OPTIONS npm run dev and inspect the site at the printed localhost URL at desktop and phone widths. Verify the weather widget has a useful pre-forecast, loading, success, and unavailable/error experience; the wedding itinerary remains usable if the weather service or JavaScript is unavailable; and the dark-mode control is keyboard accessible, follows the system preference when no explicit choice exists, persists an explicit choice, and keeps readable contrast across all sections.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "No dependency installation is needed. Node.js v22.23.2 is installed and package.json requires Node.js 18 or newer. Work from the existing complete site on branch feat/weather-dark-mode, which was created from feat/wedding-itinerary because local main does not contain the deployed implementation.",
+  "environment_constraints": "NODE_OPTIONS points to missing /opt/amazon/kiro-agent/proxy-bootstrap.js, so unset it for Node/npm commands. There is no Dockerfile and no configured Git remote. Do not require network access during build or tests. A live weather provider may be called only from the browser at runtime and must degrade gracefully when offline, blocked, outside its forecast horizon, or returning an error. Publishing and pull request creation are outside this task.",
+  "contribution_requirements": "README.md is the only project documentation. Preserve dependency-free operation, semantic landmarks, visible keyboard focus, touch-friendly controls, reduced-motion behavior, safe target and rel attributes on external links, and progressive enhancement. Commit the review-ready implementation locally without pushing.",
+  "key_patterns": "index.html contains all core content and remains useful without JavaScript. styles.css uses cascade layers, CSS custom properties, responsive breakpoints at 820px and 560px, explicit print styling, and tested contrast/focus contracts. script.js is a classic deferred script that adds the js class, uses querySelector/querySelectorAll, and progressively enhances countdown, current-date, clipboard, and toast behavior. Weather should target the October 7 through October 9, 2026 New York event dates, expose a plain-HTML fallback, fetch only when forecast data can reasonably be available, render text without innerHTML, and retain a direct forecast link. Dark mode should use semantic button state, CSS variables, system color preference as the default, an explicit persisted user override, and an early theme application strategy that avoids a light-theme flash.",
+  "relevant_files": [
+    "index.html",
+    "styles.css",
+    "script.js",
+    "tests/site.test.js",
+    "scripts/validate.js",
+    "scripts/serve.js",
+    "package.json",
+    "README.md",
+    ".gitignore",
+    ".agents/tasks/task-create-wedding-website/context.json",
+    ".agents/tasks/task-create-wedding-website/features/FEAT-001.json"
+  ],
+  "directory_structure": "Application files are at repository root: index.html is the semantic page, styles.css owns visual themes and responsive presentation, and script.js owns progressive interactions. scripts/ contains the local server and production validator. tests/site.test.js is the sole automated test file. Task state is stored under .agents/tasks/. There are no dependencies, generated assets, snapshots, CI workflows, Docker files, or contribution guides."
+}

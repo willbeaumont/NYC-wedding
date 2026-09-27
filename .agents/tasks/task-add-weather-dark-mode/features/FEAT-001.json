@@ -1,0 +1,22 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Confirm the existing deployed-site source is healthy on the follow-up branch before adding the weather and dark-mode features.",
+  "status": "completed",
+  "steps": [
+    "Confirm the working branch is feat/weather-dark-mode and that it was created from the complete feat/wedding-itinerary implementation rather than the incomplete local main branch.",
+    "Confirm package.json has no dependencies and Node.js satisfies the documented >=18 engine, so no installation is required.",
+    "Run the existing production validation with env -u NODE_OPTIONS npm run build and the existing Node test suite with env -u NODE_OPTIONS npm test. Record any pre-existing failure without changing application behavior in this setup feature."
+  ],
+  "acceptance_criteria": [
+    "The repository is on feat/weather-dark-mode and retains the complete wedding itinerary implementation.",
+    "The dependency-free baseline build and all existing tests pass with NODE_OPTIONS unset."
+  ],
+  "verification": [
+    "env -u NODE_OPTIONS npm run build",
+    "env -u NODE_OPTIONS npm test",
+    "git branch --show-current"
+  ],
+  "blocked_reason": null,
+  "findings": "Confirmed feat/weather-dark-mode is checked out at 3696bda and exactly matches the feat/wedding-itinerary tip, retaining the complete wedding itinerary source. package.json has no dependencies and requires Node.js >=18; env -u NODE_OPTIONS node --version reported v22.23.2, so no installation was needed. env -u NODE_OPTIONS npm run build passed and validated all 3 production files. env -u NODE_OPTIONS npm test passed all 12 existing tests with 0 failures. git branch --show-current reported feat/weather-dark-mode. No application behavior was changed."
+}
