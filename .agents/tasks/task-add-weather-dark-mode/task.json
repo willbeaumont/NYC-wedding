@@ -2,13 +2,13 @@
   "task_id": "task-add-weather-dark-mode",
   "task_description": "Add an available-when-supported New York wedding forecast widget and persistent accessible dark mode to the existing wedding itinerary site.",
   "status": "completed",
-  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004", "FEAT-005"],
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004", "FEAT-005", "FEAT-006"],
   "blocked_reason": null,
   "verification": {
     "build": "pass",
     "tests": "pass",
     "test_quality": "pass",
     "docker_build": "skipped",
-    "summary": "The Friday itinerary now includes the 8:00 PM cocktail party at the newlyweds' apartment with private logistics withheld. Production validation passed and all 22 Node tests passed. No Dockerfile exists."
+    "summary": "The Friday countdown now presents its remaining-day value at a substantially larger responsive size with accessible, honest before, during, and after-event messaging. Production validation passed, all 23 Node tests passed, and real-browser checks passed at 320px and 1280px in light and dark modes. No Dockerfile exists."
   }
 }

@@ -201,7 +201,32 @@
   .button-ghost { border-color: rgba(255,255,255,0.42); }
   .button-ghost:hover { background: rgba(255,255,255,0.1); }
   .button-light { color: var(--ink-deep); background: var(--paper-light); white-space: nowrap; }
-  .countdown { margin-top: 1.35rem; color: #b9cac3; font-size: 0.83rem; letter-spacing: 0.04em; }
+  .countdown {
+    display: grid;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 1.75rem;
+    padding: 0.8rem 1.15rem 0.9rem;
+    border-left: 4px solid var(--gold-light);
+    background: rgba(7, 17, 14, 0.42);
+  }
+  .countdown-value {
+    color: var(--hero-foreground);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(3.25rem, 8vw, 5.75rem);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.055em;
+    line-height: 0.92;
+  }
+  .countdown-label {
+    margin-top: 0.55rem;
+    color: #d5ded9;
+    font-size: clamp(0.76rem, 1.4vw, 0.9rem);
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    line-height: 1.45;
+    text-transform: uppercase;
+  }
 
   .hero-art { position: absolute; inset: 0; z-index: -1; }
   .sun { position: absolute; top: 16%; right: 9%; width: clamp(220px, 31vw, 470px); aspect-ratio: 1; border: 1px solid rgba(224,197,140,0.28); border-radius: 50%; box-shadow: 0 0 0 45px rgba(224,197,140,0.025), 0 0 0 90px rgba(224,197,140,0.018); }
