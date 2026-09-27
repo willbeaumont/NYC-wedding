@@ -65,8 +65,18 @@ function makeNode() {
 }
 
 function executeApp({ storedTheme = null, systemDark = false, storageThrows = false } = {}) {
+  class TestDate extends Date {
+    constructor(...args) {
+      super(...(args.length ? args : ['2026-09-01T16:00:00Z']));
+    }
+
+    static now() { return new Date('2026-09-01T16:00:00Z').getTime(); }
+  }
+
   const root = makeNode();
   const status = makeNode();
+  const updated = makeNode();
+  updated.hidden = true;
   const toggle = makeNode();
   const icon = makeNode();
   const label = makeNode();
@@ -75,6 +85,7 @@ function executeApp({ storedTheme = null, systemDark = false, storageThrows = fa
   const cards = Object.fromEntries(['2026-10-07', '2026-10-08', '2026-10-09'].map((date) => {
     const fields = {
       '[data-weather-condition]': makeNode(),
+      '[data-weather-source]': makeNode(),
       '[data-weather-high]': makeNode(),
       '[data-weather-low]': makeNode(),
       '[data-weather-rain]': makeNode()
@@ -104,6 +115,7 @@ function executeApp({ storedTheme = null, systemDark = false, storageThrows = fa
     documentElement: root,
     querySelector(selector) {
       if (selector === '#weather-status') return status;
+      if (selector === '#weather-updated') return updated;
       if (selector === '#theme-toggle') return toggle;
       if (selector === '.theme-toggle-icon') return icon;
       if (selector === '#theme-toggle-label') return label;
@@ -116,7 +128,7 @@ function executeApp({ storedTheme = null, systemDark = false, storageThrows = fa
   };
   const context = {
     AbortController,
-    Date,
+    Date: TestDate,
     Intl,
     URL,
     URLSearchParams,
@@ -142,6 +154,7 @@ function executeApp({ storedTheme = null, systemDark = false, storageThrows = fa
     mediaListeners,
     root,
     status,
+    updated,
     themeColor,
     toggle,
     getSavedTheme: () => savedTheme
@@ -192,6 +205,16 @@ test('includes the confirmed post-ceremony lunch without inventing its time', ()
   assert.match(html, /exact lunch timing has not been confirmed|final timing will be shared/i);
 });
 
+test('includes the confirmed Friday cocktail party without exposing private logistics', () => {
+  const cocktailEvent = html.match(/<li>\s*<time datetime="2026-10-09T20:00:00-04:00">8:00 PM<\/time>[\s\S]*?<\/li>/)?.[0];
+
+  assert.ok(cocktailEvent, 'Expected the 8:00 PM Friday event');
+  assert.match(cocktailEvent, /Cocktail party/);
+  assert.match(cocktailEvent, /newlyweds' apartment/i);
+  assert.doesNotMatch(cocktailEvent, /\d+\s+(?:East|West|E\.|W\.)?\s*[A-Z][a-z]+\s+(?:Street|Avenue|Road)|access code|apartment number/i);
+  assert.match(html, /Apartment address and arrival details will be shared privately/i);
+});
+
 test('provides both required routes and live-service advice', () => {
   assert.match(html, /West 79th Street \/ Museum area/);
   assert.match(html, /81 St-Museum of Natural History/);
@@ -230,11 +253,13 @@ test('has no third-party runtime assets', () => {
 test('provides a semantic weather fallback and secure direct forecast links', () => {
   assert.match(html, /id="weather"[^>]*aria-labelledby="weather-title"/);
   assert.match(html, /id="weather-status" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(html, /id="weather-updated" hidden/);
   assert.equal((html.match(/data-weather-date="2026-10-0[789]"/g) || []).length, 3);
   assert.match(html, /Typical early October conditions are shown until a live daily forecast/i);
   assert.equal((html.match(/About 68°F/g) || []).length, 3);
   assert.equal((html.match(/About 54°F/g) || []).length, 3);
   assert.equal((html.match(/About 30% chance/g) || []).length, 3);
+  assert.equal((html.match(/data-weather-source>Typical estimate/g) || []).length, 3);
   assert.doesNotMatch(html, /Not available yet|Forecast details will appear here/i);
   assert.match(html, /forecast\.weather\.gov\/MapClick\.php\?lat=40\.7128&amp;lon=-74\.0060/);
   assert.match(html, /open-meteo\.com/);
@@ -267,7 +292,20 @@ test('renders controlled available forecast data without network access', async 
   assert.equal(runtime.cards['2026-10-07'].fields['[data-weather-high]'].textContent, '68°F');
   assert.equal(runtime.cards['2026-10-09'].fields['[data-weather-low]'].textContent, '49°F');
   assert.equal(runtime.cards['2026-10-09'].fields['[data-weather-rain]'].textContent, '70% chance');
+  assert.equal(runtime.cards['2026-10-09'].fields['[data-weather-source]'].textContent, 'Live forecast');
+  assert.equal(runtime.cards['2026-10-09'].dataset.forecast, 'live');
   assert.equal(runtime.status.dataset.state, 'success');
+  assert.match(runtime.status.textContent, /Live Open-Meteo forecast updated Sep 25, 2026/i);
+  assert.equal(runtime.updated.hidden, false);
+  assert.match(runtime.updated.textContent, /Last successful live update: Sep 25, 2026/i);
+
+  const lastUpdate = runtime.updated.textContent;
+  const refreshResult = await runtime.app.loadWeatherForecast({
+    now: new Date('2026-09-25T16:30:00Z'),
+    fetchImpl: async () => { throw new Error('refresh failed'); }
+  });
+  assert.equal(refreshResult, 'error');
+  assert.equal(runtime.updated.textContent, lastUpdate, 'A failed refresh should preserve the last successful update time');
 });
 
 test('honors the inclusive forecast boundary, avoids early fetches, and handles service failures', async () => {
@@ -296,6 +334,93 @@ test('honors the inclusive forecast boundary, avoids early fetches, and handles 
   assert.equal(failed, 'error');
   assert.equal(runtime.status.dataset.state, 'error');
   assert.match(runtime.status.textContent, /direct New York forecast link/i);
+});
+
+test('continues live requests through the final event day using only remaining dates', async () => {
+  const runtime = executeApp();
+  const cases = [
+    {
+      now: new Date('2026-10-08T16:00:00Z'),
+      dates: ['2026-10-08', '2026-10-09'],
+      start: '2026-10-08',
+      end: '2026-10-09'
+    },
+    {
+      now: new Date('2026-10-09T16:00:00Z'),
+      dates: ['2026-10-09'],
+      start: '2026-10-09',
+      end: '2026-10-09'
+    }
+  ];
+
+  for (const scenario of cases) {
+    const daily = {
+      time: scenario.dates,
+      weather_code: scenario.dates.map(() => 1),
+      temperature_2m_max: scenario.dates.map(() => 65),
+      temperature_2m_min: scenario.dates.map(() => 53),
+      precipitation_probability_max: scenario.dates.map(() => 25)
+    };
+    let requestedUrl;
+    const result = await runtime.app.loadWeatherForecast({
+      now: scenario.now,
+      fetchImpl: async (url) => {
+        requestedUrl = new URL(url);
+        return { ok: true, json: async () => ({ daily }) };
+      }
+    });
+
+    assert.equal(result, 'success');
+    assert.equal(runtime.app.forecastAvailability(scenario.now), 'available');
+    assert.equal(requestedUrl.searchParams.get('start_date'), scenario.start);
+    assert.equal(requestedUrl.searchParams.get('end_date'), scenario.end);
+    assert.match(runtime.status.textContent, /Past event-date cards remain labeled as typical estimates/i);
+  }
+
+  assert.equal(runtime.app.forecastAvailability(new Date('2026-10-10T16:00:00Z')), 'past');
+});
+
+test('refreshes live weather every 30 minutes without overlapping requests', async () => {
+  const runtime = executeApp();
+  const daily = {
+    time: ['2026-10-07', '2026-10-08', '2026-10-09'],
+    weather_code: [0, 0, 0],
+    temperature_2m_max: [68, 68, 68],
+    temperature_2m_min: [54, 54, 54],
+    precipitation_probability_max: [10, 10, 10]
+  };
+  const resolvers = [];
+  let calls = 0;
+  let refresh;
+  let scheduledDelay;
+  const updates = runtime.app.startWeatherUpdates({
+    nowProvider: () => new Date('2026-09-25T16:00:00Z'),
+    fetchImpl: () => {
+      calls += 1;
+      return new Promise((resolve) => resolvers.push(() => resolve({
+        ok: true,
+        json: async () => ({ daily })
+      })));
+    },
+    setIntervalImpl(callback, delay) {
+      refresh = callback;
+      scheduledDelay = delay;
+      return 42;
+    }
+  });
+
+  assert.equal(calls, 1);
+  assert.equal(updates.intervalId, 42);
+  assert.equal(scheduledDelay, 30 * 60 * 1000);
+  const overlapping = refresh();
+  assert.equal(calls, 1, 'A refresh must reuse the active request');
+  resolvers.shift()();
+  await Promise.all([updates.initialLoad, overlapping]);
+
+  const refreshed = refresh();
+  assert.equal(calls, 2, 'A completed request should allow the next refresh');
+  resolvers.shift()();
+  await refreshed;
 });
 
 test('falls back safely for malformed, HTTP, and timed-out forecast requests', async () => {

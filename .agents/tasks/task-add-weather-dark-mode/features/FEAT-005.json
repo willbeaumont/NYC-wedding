@@ -1,0 +1,22 @@
+{
+  "id": "FEAT-005",
+  "type": "feat",
+  "description": "Add the Friday 8:00 PM cocktail party at the newlyweds' apartment to the wedding itinerary without exposing private or unconfirmed logistics.",
+  "status": "completed",
+  "steps": [
+    "Add the cocktail party to the Friday itinerary at 8:00 PM with privacy-safe apartment wording.",
+    "Update project documentation, production validation, and regression tests for the new event.",
+    "Run the production build and test suite, then commit the verified change locally."
+  ],
+  "acceptance_criteria": [
+    "Friday clearly shows an 8:00 PM cocktail party at the newlyweds' apartment.",
+    "No apartment address, access instructions, or invented logistics are exposed.",
+    "Production validation and all automated tests pass."
+  ],
+  "verification": [
+    "env -u NODE_OPTIONS npm run build",
+    "env -u NODE_OPTIONS npm test"
+  ],
+  "blocked_reason": null,
+  "findings": "Added the Friday 8:00 PM cocktail party to the itinerary at the newlyweds' apartment, with the apartment address and arrival details explicitly reserved for private sharing. Updated the confirmed-details documentation, production validation, and regression coverage without exposing or inventing private logistics. env -u NODE_OPTIONS npm run build passed and env -u NODE_OPTIONS npm test passed all 22 tests."
+}
