@@ -1,0 +1,14 @@
+{
+  "name": "nyc-wedding-itinerary",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A responsive New York wedding itinerary for October 2026.",
+  "scripts": {
+    "dev": "node scripts/serve.js",
+    "build": "node scripts/validate.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

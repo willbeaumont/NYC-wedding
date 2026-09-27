@@ -1,0 +1,23 @@
+{
+  "project_type": "Greenfield responsive static wedding itinerary website",
+  "language": "HTML, CSS, and vanilla JavaScript",
+  "build_system": "npm scripts using only built-in Node.js capabilities; no third-party runtime dependencies",
+  "test_framework": "Node.js built-in test runner with source-content and DOM-contract checks",
+  "build_command": "npm run build",
+  "test_command": "npm test",
+  "verification_instructions": "Run npm run build, then npm test, then launch npm run dev and inspect the responsive page at the printed localhost URL. Confirm Wednesday October 7, 2026 is shown as arrival day; Friday October 9, 2026 shows the 11:00 AM Manhattan ceremony followed by lunch at Keens Steakhouse; all external map and transit links have safe target attributes; keyboard focus and reduced-motion behavior are usable.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "No dependency installation is required. Use the preinstalled Node.js runtime. Run npm run dev to serve the site locally.",
+  "environment_constraints": "The workspace contained no existing application or Git repository at task start. Avoid external package, font, image, and map API dependencies so the result builds and runs offline. Live transit conditions cannot be guaranteed, so route copy must direct guests to verify service on the travel day.",
+  "contribution_requirements": "No CONTRIBUTING.md or repository-specific contribution rules existed. Create a review-ready local Git repository but do not push or create a pull request.",
+  "key_patterns": "No pre-existing code patterns. Use semantic HTML, mobile-first CSS, accessible controls, progressive enhancement, and content-driven vanilla JavaScript. Preserve the likely intended proper name 'Keens Steakhouse' and present ceremony location as the Manhattan Marriage Bureau at 141 Worth Street, adjacent to City Hall, rather than implying ceremonies occur inside City Hall itself.",
+  "relevant_files": [
+    "index.html",
+    "styles.css",
+    "script.js",
+    "package.json",
+    "tests/site.test.js",
+    "README.md"
+  ],
+  "directory_structure": "Project files live at workspace root. index.html is the page shell, styles.css owns the visual system and responsive layout, script.js provides progressive interactions, tests/ contains dependency-free automated checks, and README.md documents local use and content assumptions. Task state lives in .agents/tasks/task-create-wedding-website/."
+}

@@ -1,0 +1,16 @@
+{
+  "task_id": "task-create-wedding-website",
+  "task_description": "Create a review-ready wedding itinerary website for guests arriving in New York on October 7, 2026 and attending a Manhattan civil ceremony and Keens Steakhouse lunch on October 9, 2026.",
+  "status": "completed",
+  "feature_order": [
+    "FEAT-001"
+  ],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "npm run build validated the production HTML, CSS, and JavaScript; all 12 Node tests passed, including the authoritative post-ceremony Keens lunch contract; tests exercise critical itinerary content, current 2026 fare guidance, route guidance, semantic and security contracts, affected touch-target selectors, light-section WCAG AA contrast, two-color focus-indicator contrast across every light and dark site surface, responsive and reduced-motion CSS, and JavaScript parsing/enhancements. Local-server inspection confirmed the lunch content is served. No Dockerfile exists. Commands require unsetting the sandbox's stale NODE_OPTIONS preload."
+  }
+}
