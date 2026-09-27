@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-006",
+  "type": "feat",
+  "description": "Make the Friday event countdown's remaining-day value substantially more prominent and easy to scan.",
+  "status": "completed",
+  "steps": [
+    "Strengthen the visual hierarchy of the Friday countdown while preserving honest wedding-date messaging.",
+    "Keep the countdown responsive, dark-mode compatible, reduced-motion friendly, and accessible.",
+    "Update regression tests and production validation, then verify at narrow and desktop widths."
+  ],
+  "acceptance_criteria": [
+    "The remaining-day value for Friday is substantially larger and easier to scan than its supporting label.",
+    "Countdown wording remains accurate before, during, and after the Friday wedding date.",
+    "The countdown remains readable and responsive in light and dark modes and at narrow and desktop widths.",
+    "Production validation and all automated tests pass."
+  ],
+  "verification": [
+    "env -u NODE_OPTIONS npm run build",
+    "env -u NODE_OPTIONS npm test",
+    "Inspect the countdown in light and dark themes at narrow and desktop widths"
+  ],
+  "blocked_reason": null,
+  "findings": "Reworked the hero countdown into a separate responsive value and supporting label, with the remaining-day value scaling from 52px at 320px to 92px at 1280px while its label remains 12.16px to 14.4px. The atomic polite live region preserves a useful no-JavaScript Friday date and JavaScript now gives accurate before, on-Friday, and post-event messaging. Production validation passed and all 23 Node tests passed. Real-browser checks at 320px and 1280px confirmed the countdown fits without horizontal overflow, remains prominent in light and dark modes, and preserves readable supporting text. No Dockerfile exists."
+}

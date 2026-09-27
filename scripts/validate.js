@@ -19,10 +19,12 @@ async function validate() {
     [html.includes('Typical early October conditions are shown') && html.includes('About 68°F') && html.includes('About 54°F') && html.includes('About 30% chance') && (html.match(/data-weather-source>Typical estimate/g) || []).length === 3, 'index.html must clearly label typical weather estimates before live forecasts are available'],
     [html.includes('forecast.weather.gov') && html.includes('rel="noopener noreferrer"'), 'index.html must include a secure direct forecast link'],
     [html.includes('id="theme-toggle"') && html.includes('aria-pressed="false"') && html.includes('id="theme-toggle-label">Dark mode</span>'), 'index.html must include an accessible theme toggle with a stable name'],
+    [html.includes('id="countdown" aria-live="polite" aria-atomic="true"') && html.includes('id="countdown-value"') && html.includes('id="countdown-label"'), 'index.html must give the Friday countdown an atomic live region with separate value and label'],
     [html.indexOf("'nyc-wedding-theme'") < html.indexOf('href="styles.css"'), 'index.html must apply a stored theme before loading CSS'],
     [css.includes('@media (prefers-reduced-motion: reduce)'), 'styles.css must respect reduced motion'],
     [css.includes(':root[data-theme="dark"]'), 'styles.css must define an explicit dark palette'],
     [css.includes('.theme-toggle') && css.includes('.weather-grid'), 'styles.css must style theme and weather controls'],
+    [css.includes('.countdown-value') && css.includes('font-size: clamp(3.25rem, 8vw, 5.75rem)') && css.includes('.countdown-label'), 'styles.css must make the countdown value substantially more prominent than its label'],
     [css.includes('@media (min-width: 561px)') && css.includes('@media (min-width: 821px)'), 'styles.css must progressively enhance its mobile-first layout'],
     [css.includes(':focus-visible'), 'styles.css must provide visible keyboard focus'],
     [css.includes('.theme-toggle[aria-pressed="true"]') && css.includes('.timeline li { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; }'), 'styles.css must show selected dark mode and stack the narrow timeline'],
@@ -33,6 +35,7 @@ async function validate() {
     [javascript.includes("EVENT_DATES.filter((date) => date >= today)") && !javascript.includes("return 'underway'"), 'script.js must continue loading remaining forecasts throughout the event window'],
     [javascript.includes('AbortController') && javascript.includes('response.ok'), 'script.js must handle forecast timeout and HTTP failures'],
     [javascript.includes('THEME_STORAGE_KEY') && javascript.includes('prefers-color-scheme: dark'), 'script.js must persist theme preference and follow the system default'],
+    [javascript.includes('WEDDING_DAY_START') && javascript.includes("setCountdown('Today'") && javascript.includes("setCountdown('Oct 9'"), 'script.js must keep the prominent Friday countdown honest before, during, and after the wedding date'],
     [!javascript.includes('innerHTML'), 'script.js must render without innerHTML']
   ];
 

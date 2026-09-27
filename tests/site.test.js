@@ -82,6 +82,8 @@ function executeApp({ storedTheme = null, systemDark = false, storageThrows = fa
   const label = makeNode();
   const themeColor = makeNode();
   const countdownNode = makeNode();
+  const countdownValueNode = makeNode();
+  const countdownLabelNode = makeNode();
   const cards = Object.fromEntries(['2026-10-07', '2026-10-08', '2026-10-09'].map((date) => {
     const fields = {
       '[data-weather-condition]': makeNode(),
@@ -121,6 +123,8 @@ function executeApp({ storedTheme = null, systemDark = false, storageThrows = fa
       if (selector === '#theme-toggle-label') return label;
       if (selector === 'meta[name="theme-color"]') return themeColor;
       if (selector === '#countdown') return countdownNode;
+      if (selector === '#countdown-value') return countdownValueNode;
+      if (selector === '#countdown-label') return countdownLabelNode;
       const weatherCard = selector.match(/^\[data-weather-date="([^"]+)"\]$/);
       return weatherCard ? cards[weatherCard[1]] : null;
     },
@@ -149,6 +153,8 @@ function executeApp({ storedTheme = null, systemDark = false, storageThrows = fa
     app: context.WeddingApp,
     cards,
     context,
+    countdownLabel: countdownLabelNode,
+    countdownValue: countdownValueNode,
     icon,
     label,
     mediaListeners,
@@ -180,6 +186,35 @@ test('shows distinct arrival and wedding dates', () => {
   assert.match(html, /Friday, October 9|2026-10-09/);
   assert.match(html, /Arrival day/);
   assert.match(html, /Wedding day/);
+});
+
+test('makes the Friday countdown prominent, responsive, and honest over time', () => {
+  assert.match(html, /id="countdown" aria-live="polite" aria-atomic="true"/);
+  assert.match(html, /id="countdown-value">Friday<\/span>/);
+  assert.match(html, /id="countdown-label">Wedding day · October 9, 2026<\/span>/);
+
+  const valueSize = propertyValue(declarationsFor('.countdown-value'), 'font-size');
+  const labelSize = propertyValue(declarationsFor('.countdown-label'), 'font-size');
+  assert.equal(valueSize, 'clamp(3.25rem, 8vw, 5.75rem)');
+  assert.equal(labelSize, 'clamp(0.76rem, 1.4vw, 0.9rem)');
+  assert.ok(3.25 / 0.9 > 3.5, 'The countdown value should be substantially larger than its label');
+  assert.equal(propertyValue(declarationsFor('.countdown'), 'max-width'), '100%');
+
+  const runtime = executeApp();
+  assert.equal(runtime.countdownValue.textContent, '38');
+  assert.equal(runtime.countdownLabel.textContent, 'days until Friday, October 9, 2026');
+
+  runtime.app.updateCountdown(new Date('2026-10-08T16:00:00-04:00'));
+  assert.equal(runtime.countdownValue.textContent, '1');
+  assert.equal(runtime.countdownLabel.textContent, 'day until Friday, October 9, 2026');
+
+  runtime.app.updateCountdown(new Date('2026-10-09T12:00:00-04:00'));
+  assert.equal(runtime.countdownValue.textContent, 'Today');
+  assert.match(runtime.countdownLabel.textContent, /Friday, October 9, 2026.*celebration is here/);
+
+  runtime.app.updateCountdown(new Date('2026-10-10T00:00:00-04:00'));
+  assert.equal(runtime.countdownValue.textContent, 'Oct 9');
+  assert.equal(runtime.countdownLabel.textContent, 'The Friday celebration was held in 2026');
 });
 
 test('gives valid 2026 subway payment advice', () => {
@@ -602,7 +637,7 @@ test('keeps a high-contrast two-color focus indicator on every surface', () => {
 
 test('JavaScript parses and enhances rather than hiding core content', () => {
   assert.doesNotThrow(() => new Script(javascript));
-  assert.match(javascript, /2026-10-09T11:00:00-04:00/);
+  assert.match(javascript, /2026-10-09T00:00:00-04:00/);
   assert.match(javascript, /America\/New_York/);
   assert.match(javascript, /navigator\.clipboard\.writeText/);
   assert.doesNotMatch(javascript, /innerHTML\s*=/);

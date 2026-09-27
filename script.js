@@ -1,6 +1,5 @@
 document.documentElement.classList.add('js');
 
-const WEDDING_DATE = new Date('2026-10-09T11:00:00-04:00');
 const EVENT_DATES = ['2026-10-07', '2026-10-08', '2026-10-09'];
 const WEATHER_TIME_ZONE = 'America/New_York';
 const WEATHER_FORECAST_DAYS = 16;
@@ -260,15 +259,32 @@ function initializeTheme({ mediaQuery = globalThis.matchMedia?.('(prefers-color-
 }
 
 const countdown = document.querySelector('#countdown');
+const countdownValue = document.querySelector('#countdown-value');
+const countdownLabel = document.querySelector('#countdown-label');
+const WEDDING_DAY_START = new Date('2026-10-09T00:00:00-04:00');
+const WEDDING_DAY_END = new Date('2026-10-10T00:00:00-04:00');
+
+function setCountdown(value, label) {
+  if (countdownValue && countdownLabel) {
+    countdownValue.textContent = value;
+    countdownLabel.textContent = label;
+  } else if (countdown) {
+    countdown.textContent = `${value} ${label}`;
+  }
+}
+
 function updateCountdown(now = new Date()) {
   if (!countdown) return;
-  const millisecondsRemaining = WEDDING_DATE.getTime() - now.getTime();
-  if (millisecondsRemaining <= 0) {
-    countdown.textContent = 'The New York celebration has arrived.';
+  if (now < WEDDING_DAY_START) {
+    const days = Math.ceil((WEDDING_DAY_START.getTime() - now.getTime()) / 86_400_000);
+    setCountdown(String(days), `${days === 1 ? 'day' : 'days'} until Friday, October 9, 2026`);
     return;
   }
-  const days = Math.ceil(millisecondsRemaining / 86_400_000);
-  countdown.textContent = `${days} ${days === 1 ? 'day' : 'days'} until the Friday celebration.`;
+  if (now < WEDDING_DAY_END) {
+    setCountdown('Today', 'Friday, October 9, 2026 · The New York celebration is here');
+    return;
+  }
+  setCountdown('Oct 9', 'The Friday celebration was held in 2026');
 }
 
 function markCurrentItineraryDay(now = new Date()) {
@@ -318,5 +334,6 @@ globalThis.WeddingApp = {
   loadWeatherForecast,
   renderForecast,
   startWeatherUpdates,
+  updateCountdown,
   weatherDescription
 };
