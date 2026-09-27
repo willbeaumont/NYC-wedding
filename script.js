@@ -101,7 +101,7 @@ function renderForecast(daily) {
 async function loadWeatherForecast({ now = new Date(), fetchImpl = globalThis.fetch, timeout = 8000 } = {}) {
   const availability = forecastAvailability(now);
   if (availability === 'early') {
-    setWeatherStatus('It is too early for a reliable daily forecast. Check again once October 9 is within the 16-day forecast window.', 'early');
+    setWeatherStatus('Typical early October conditions are shown below. Check again once October 9 is within the 16-day forecast window.', 'early');
     return 'early';
   }
   if (availability === 'past') {
@@ -113,7 +113,7 @@ async function loadWeatherForecast({ now = new Date(), fetchImpl = globalThis.fe
     return 'underway';
   }
   if (typeof fetchImpl !== 'function') {
-    setWeatherStatus('Live forecast data is unavailable right now. Use the direct New York forecast link below.', 'error');
+    setWeatherStatus('Live forecast data is unavailable right now. Typical early October estimates remain below, and the direct New York forecast link is available.', 'error');
     return 'error';
   }
 
@@ -130,7 +130,7 @@ async function loadWeatherForecast({ now = new Date(), fetchImpl = globalThis.fe
     renderForecast(payload.daily);
     return 'success';
   } catch {
-    setWeatherStatus('Live forecast data is unavailable right now. Use the direct New York forecast link below and check again later.', 'error');
+    setWeatherStatus('Live forecast data is unavailable right now. Typical early October estimates remain below. Use the direct New York forecast link and check again later.', 'error');
     return 'error';
   } finally {
     globalThis.clearTimeout(timeoutId);
@@ -165,9 +165,11 @@ function applyTheme(theme) {
   document.documentElement.style.colorScheme = theme;
 
   const toggle = document.querySelector('#theme-toggle');
+  const icon = document.querySelector('.theme-toggle-icon');
   const label = document.querySelector('#theme-toggle-label');
   const themeColor = document.querySelector('meta[name="theme-color"]');
   if (toggle) toggle.setAttribute('aria-pressed', String(isDark));
+  if (icon) icon.textContent = isDark ? '☾' : '☀';
   if (label) label.textContent = 'Dark mode';
   if (themeColor) themeColor.setAttribute('content', isDark ? '#0d1c18' : '#17352d');
   return theme;
